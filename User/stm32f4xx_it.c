@@ -145,32 +145,24 @@ void SysTick_Handler(void)
 /*  available peripheral interrupt handler's name please refer to the startup */
 /*  file (startup_stm32f429_439xx.s).                         */
 /******************************************************************************/
-void DEBUG_USART_IRQHandler(void)
+//void DEBUG_USART_IRQHandler(void)
+//{
+//  uint8_t ucTemp;
+//	if(USART_GetITStatus(DEBUG_USART,USART_IT_RXNE)!=RESET)
+//	{		
+//		ucTemp = USART_ReceiveData( DEBUG_USART );
+//    USART_SendData(DEBUG_USART,ucTemp);    
+//	}	 
+//}	
+
+
+//uint8_t receive_flag=0;
+//uint8_t ucTemp;
+
+void _485_IRQHandler(void)
 {
-  uint8_t ucTemp;
-	if(USART_GetITStatus(DEBUG_USART,USART_IT_RXNE)!=RESET)
-	{		
-		ucTemp = USART_ReceiveData( DEBUG_USART );
-    USART_SendData(DEBUG_USART,ucTemp);    
-	}	 
-}	
 
-
-uint8_t receive_flag=0;
-uint8_t ucTemp;
-
-void __485_USART_IRQHandler(void)
-{
-
-	if(USART_GetITStatus(__485_USART,USART_IT_RXNE)!=RESET)
-	{		
-		ucTemp = USART_ReceiveData( __485_USART );
-      
-    receive_flag =1; 
-    
-    USART_ClearITPendingBit(__485_USART,USART_IT_RXNE);
- 
-	}	 
+   bsp_485_IRQHandler();
 }	
 	
 /**

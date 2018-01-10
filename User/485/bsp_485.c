@@ -29,122 +29,221 @@
 //作业：参考本例子，编写485通讯驱动。试验一下把切换状态中的延时取消，观察现象
 
 
- /**
-  * @brief  配置嵌套向量中断控制器NVIC
-  * @param  无
-  * @retval 无
-  */
+ static void Delay(__IO u32 nCount); 
+
+
+/// 配置USART接收中断
 static void NVIC_Configuration(void)
 {
-  NVIC_InitTypeDef NVIC_InitStructure;
-  
-  /* 嵌套向量中断控制器组选择 */
-  NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-  
-  /* 配置USART为中断源 */
-  NVIC_InitStructure.NVIC_IRQChannel = __485_USART_IRQ;
-  /* 抢断优先级为1 */
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-  /* 子优先级为1 */
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-  /* 使能中断 */
-  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-  /* 初始化配置NVIC */
-  NVIC_Init(&NVIC_InitStructure);
+    NVIC_InitTypeDef NVIC_InitStructure;
+    /* Configure the NVIC Preemption Priority Bits */
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
+
+    /* Enable the USARTy Interrupt */
+    NVIC_InitStructure.NVIC_IRQChannel = _485_INT_IRQ; 
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority =1;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 }
-
-
- /**
-  * @brief  __485_USART GPIO 配置,工作模式配置。115200 8-N-1 ，中断接收模式
-  * @param  无
-  * @retval 无
-  */
-void __485_USART_Config(void)
+/*
+ * 函数名：_485_Config
+ * 描述  ：USART GPIO 配置,工作模式配置
+ * 输入  ：无
+ * 输出  : 无
+ * 调用  ：外部调用
+ */
+void _485_Config(void)
 {
-  GPIO_InitTypeDef GPIO_InitStructure;
-  USART_InitTypeDef USART_InitStructure;
-		
-  RCC_AHB1PeriphClockCmd(__485_USART_RX_GPIO_CLK|__485_USART_TX_GPIO_CLK|__485_CS_GPIO_CLK,ENABLE);
+	GPIO_InitTypeDef GPIO_InitStructure;
+	USART_InitTypeDef USART_InitStructure;
 
-  /* 使能 USART 时钟 */
-  RCC_APB1PeriphClockCmd(__485_USART_CLK, ENABLE);
-  
-  /* GPIO初始化 */
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;  
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  
-  /* 配置Tx引脚为复用功能  */
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_Pin = __485_USART_TX_PIN  ;  
-  GPIO_Init(__485_USART_TX_GPIO_PORT, &GPIO_InitStructure);
+	/* config USART clock */
+	RCC_AHB1PeriphClockCmd(_485_USART_RX_GPIO_CLK|_485_USART_TX_GPIO_CLK|_485_RE_GPIO_CLK, ENABLE);
+	RCC_APB1PeriphClockCmd(_485_USART_CLK, ENABLE); 
 
-  /* 配置Rx引脚为复用功能 */
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_Pin = __485_USART_RX_PIN;
-  GPIO_Init(__485_USART_RX_GPIO_PORT, &GPIO_InitStructure);
-  
-  //配置485收发器的控制引脚
+	
+	  /* Connect PXx to USARTx_Tx*/
+  GPIO_PinAFConfig(_485_USART_RX_GPIO_PORT,_485_USART_RX_SOURCE, _485_USART_RX_AF);
+
+  /* Connect PXx to USARTx_Rx*/
+  GPIO_PinAFConfig(_485_USART_TX_GPIO_PORT,_485_USART_TX_SOURCE,_485_USART_TX_AF);
+
+	
+	/* USART GPIO config */
+   /* Configure USART Tx as alternate function push-pull */
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;  
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+
+  GPIO_InitStructure.GPIO_Pin = _485_USART_TX_PIN  ;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init(_485_USART_TX_GPIO_PORT, &GPIO_InitStructure);
+
+  /* Configure USART Rx as alternate function  */
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF; 
+	GPIO_InitStructure.GPIO_Pin = _485_USART_RX_PIN;
+  GPIO_Init(_485_USART_RX_GPIO_PORT, &GPIO_InitStructure);
+
+  
+  /* 485收发控制管脚 */
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_Pin = __485_CS__PIN;
-  GPIO_Init(__485_CS_GPIO_PORT, &GPIO_InitStructure);
-  
+  GPIO_InitStructure.GPIO_Pin = _485_RE_PIN  ;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init(_485_RE_GPIO_PORT, &GPIO_InitStructure);
+	  
+	/* USART mode config */
+	USART_InitStructure.USART_BaudRate = _485_USART_BAUDRATE;
+	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+	USART_InitStructure.USART_StopBits = USART_StopBits_1;
+	USART_InitStructure.USART_Parity = USART_Parity_No ;
+	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 
-  
- /* 连接 PXx 到 USARTx_Tx*/
-  GPIO_PinAFConfig(__485_USART_RX_GPIO_PORT,__485_USART_RX_SOURCE,__485_USART_RX_AF);
-
-  /*  连接 PXx 到 USARTx__Rx*/
-  GPIO_PinAFConfig(__485_USART_TX_GPIO_PORT,__485_USART_TX_SOURCE,__485_USART_TX_AF);
-  
-  /* 配置串__485_USART 模式 */
-  /* 波特率设置：__485_USART_BAUDRATE */
-  USART_InitStructure.USART_BaudRate = __485_USART_BAUDRATE;
-  /* 字长(数据位+校验位)：8 */
-  USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-  /* 停止位：1个停止位 */
-  USART_InitStructure.USART_StopBits = USART_StopBits_1;
-  /* 校验位选择：不使用校验 */
-  USART_InitStructure.USART_Parity = USART_Parity_No;
-  /* 硬件流控制：不使用硬件流 */
-  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-  /* USART模式控制：同时使能接收和发送 */
-  USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-  /* 完成USART初始化配置 */
-  USART_Init(__485_USART, &USART_InitStructure); 
+	USART_Init(_485_USART, &USART_InitStructure); 
+  USART_Cmd(_485_USART, ENABLE);
 	
-  /* 嵌套向量中断控制器NVIC配置 */
 	NVIC_Configuration();
-  
 	/* 使能串口接收中断 */
-	USART_ITConfig(__485_USART, USART_IT_RXNE, ENABLE);
+	USART_ITConfig(_485_USART, USART_IT_RXNE, ENABLE);
 	
-  /* 使能串口 */
-  USART_Cmd(__485_USART, ENABLE);
-    //初始化完，485收发器默认处于接收状态
-  __485_CS_RX_EN;
+	GPIO_ResetBits(_485_RE_GPIO_PORT,_485_RE_PIN); //默认进入接收模式
 }
 
-/*****************  发送一个字符 **********************/
-void __485_SendByte( USART_TypeDef * pUSARTx, uint8_t ch)
+
+
+/***************** 发送一个字符  **********************/
+//使用单字节数据发送前要使能发送引脚，发送后要使能接收引脚。
+void _485_SendByte(  uint8_t ch )
 {
-  //准备发送数据
-  __485_CS_TX_EN;
-  
-	/* 发送一个字节数据到USART */
-	USART_SendData(pUSARTx,ch);
+	/* 发送一个字节数据到USART1 */
+	USART_SendData(_485_USART,ch);
 		
-	/* 等待发送数据寄存器为空 */
-	while (USART_GetFlagStatus(pUSARTx, USART_FLAG_TXE) == RESET);	
+	/* 等待发送完毕 */
+	while (USART_GetFlagStatus(_485_USART, USART_FLAG_TXE) == RESET);	
+	
+}
+/*****************  发送指定长度的字符串 **********************/
+void _485_SendStr_length( uint8_t *str,uint32_t strlen )
+{
+	unsigned int k=0;
 
-  
-  //发送完成，准备接收数据
-  __485_CS_RX_EN;
+	  _485_TX_EN()	;//	使能发送数据	
+    while(k < strlen)
+    {
+        _485_SendByte( *(str + k) );
+        k++;
+    } 
+		
+	/*加短暂延时，保证485发送数据完毕*/
+//	Delay(0xFFF);
+		
+	_485_RX_EN()	;//	使能接收数据
 }
 
 
+/*****************  发送字符串 **********************/
+void _485_SendString( uint8_t *str)
+{
+	unsigned int k=0;
+	
+	  _485_TX_EN()	;//	使能发送数据
+	
+	while(*(str + k)!='\0')
+	{
+			_485_SendByte(  *(str + k) );
+			k++;
+	}
+	printf("\n");
+	
+//	do
+//	{
+//			_485_SendByte(  *(str + k) );
+////				printf("%c",*(str+k));
+//			k++;
+//	}while(*(str + k)!='\0');
+//	printf("\n");
+	/*加短暂延时，保证485发送数据完毕*/
+			Delay(0xfFF);
+			_485_RX_EN()	;//	使能接收数据
+		
+
+}
+
+
+
+//中断缓存串口数据
+#define UART_BUFF_SIZE      1024
+volatile    uint16_t uart_p = 0;
+uint8_t     uart_buff[UART_BUFF_SIZE];
+
+void bsp_485_IRQHandler(void)
+{
+    if(uart_p<UART_BUFF_SIZE)
+    {
+        if(USART_GetITStatus(_485_USART, USART_IT_RXNE) != RESET)
+        {
+            uart_buff[uart_p] = USART_ReceiveData(_485_USART);
+            uart_p++;
+						
+						USART_ClearITPendingBit(_485_USART, USART_IT_RXNE);
+        }
+    }
+		else
+		{
+			USART_ClearITPendingBit(_485_USART, USART_IT_RXNE);
+//			clean_rebuff();       
+		}
+}
+
+
+
+//获取接收到的数据和长度
+char *get_rebuff(uint16_t *len) 
+{
+    *len = uart_p;
+    return (char *)&uart_buff;
+}
+
+//清空缓冲区
+void clean_rebuff(void) 
+{
+
+    uint16_t i=UART_BUFF_SIZE+1;
+    uart_p = 0;
+	  while(i)
+		uart_buff[--i]=0;
+
+}
+
+///重定向c库函数printf到串口DEBUG_USART，重定向后可使用printf函数
+int fputc(int ch, FILE *f)
+{
+//	  _485_TX_EN();
+		/* 发送一个字节数据到串口DEBUG_USART */
+		USART_SendData(_485_USART, (uint8_t) ch);
+		
+		/* 等待发送完毕 */
+		while (USART_GetFlagStatus(_485_USART, USART_FLAG_TXE) == RESET);
+	
+//	  _485_RX_EN_NODelay();
+		return (ch);
+}
+
+/////重定向c库函数scanf到串口DEBUG_USART，重写向后可使用scanf、getchar等函数
+//int fgetc(FILE *f)
+//{
+//		/* 等待串口输入数据 */
+//		while (USART_GetFlagStatus(DEBUG_USART, USART_FLAG_RXNE) == RESET);
+
+//		return (int)USART_ReceiveData(DEBUG_USART);
+//}
+
+static void Delay(__IO uint32_t nCount)	 //简单的延时函数
+{
+	for(; nCount != 0; nCount--);
+}
 
 /*********************************************END OF FILE**********************/

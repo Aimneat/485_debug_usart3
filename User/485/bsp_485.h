@@ -7,50 +7,101 @@
 
 //引脚定义
 /*******************************************************/
-#define __485_USART                             USART2
-#define __485_USART_CLK                         RCC_APB1Periph_USART2
-#define __485_USART_BAUDRATE                    115200  //串口波特率
+#define _485_USART                             USART3
+#define _485_USART_CLK                         RCC_APB1Periph_USART3
+#define _485_USART_BAUDRATE                    115200  //串口波特率
 
-#define __485_USART_RX_GPIO_PORT                GPIOD
-#define __485_USART_RX_GPIO_CLK                 RCC_AHB1Periph_GPIOD
-#define __485_USART_RX_PIN                      GPIO_Pin_6
-#define __485_USART_RX_AF                       GPIO_AF_USART2
-#define __485_USART_RX_SOURCE                   GPIO_PinSource6
+#define _485_USART_RX_GPIO_PORT                GPIOB
+#define _485_USART_RX_GPIO_CLK                 RCC_AHB1Periph_GPIOB
+#define _485_USART_RX_PIN                      GPIO_Pin_11
+#define _485_USART_RX_AF                       GPIO_AF_USART3
+#define _485_USART_RX_SOURCE                   GPIO_PinSource11
 
-#define __485_USART_TX_GPIO_PORT                GPIOD
-#define __485_USART_TX_GPIO_CLK                 RCC_AHB1Periph_GPIOD
-#define __485_USART_TX_PIN                      GPIO_Pin_5
-#define __485_USART_TX_AF                       GPIO_AF_USART2
-#define __485_USART_TX_SOURCE                   GPIO_PinSource5
+#define _485_USART_TX_GPIO_PORT                GPIOB
+#define _485_USART_TX_GPIO_CLK                 RCC_AHB1Periph_GPIOB
+#define _485_USART_TX_PIN                      GPIO_Pin_10
+#define _485_USART_TX_AF                       GPIO_AF_USART3
+#define _485_USART_TX_SOURCE                   GPIO_PinSource10
 
-#define __485_USART_IRQHandler                  USART2_IRQHandler
-#define __485_USART_IRQ                 				USART2_IRQn
+//#define _485_USART_IRQHandler                  USART3_IRQHandler
+//#define _485_USART_IRQ                 				USART3_IRQn
+
+#define _485_INT_IRQ                 						USART3_IRQn
+#define _485_IRQHandler                         USART3_IRQHandler
+
+#define _485_RE_GPIO_PORT												GPIOD
+#define _485_RE_GPIO_CLK												RCC_AHB1Periph_GPIOD
+#define _485_RE_PIN															GPIO_Pin_11
+
+//#define _485_CS__PIN                  GPIO_Pin_11                 
+//#define _485_CS_GPIO_PORT            GPIOD                    
+//#define _485_CS_GPIO_CLK             RCC_AHB1Periph_GPIOD
 
 
-
-#define __485_CS__PIN                  GPIO_Pin_11                 
-#define __485_CS_GPIO_PORT            GPIOD                    
-#define __485_CS_GPIO_CLK             RCC_AHB1Periph_GPIOD
-
-
-//等待收发器的延时
-static void __485_delay(__IO u32 nCount)
+/// 不精确的延时
+static void _485_delay(__IO u32 nCount)
 {
-
 	for(; nCount != 0; nCount--);
-}
+} 
 
 
-//控制485发送数据，CS引脚为高电平
-#define __485_CS_TX_EN      __485_delay(3000); GPIO_SetBits(__485_CS_GPIO_PORT,__485_CS__PIN); __485_delay(3000);
+/*控制收发引脚*/
+//进入接收模式,必须要有延时等待485处理完数据
+#define _485_RX_EN()			_485_delay(1000); GPIO_ResetBits(_485_RE_GPIO_PORT,_485_RE_PIN);  _485_delay(1000);
+#define _485_RX_EN_NODelay()			 GPIO_ResetBits(_485_RE_GPIO_PORT,_485_RE_PIN);  
 
-//控制485接收数据，CS引脚为低电平
-#define __485_CS_RX_EN      __485_delay(3000); GPIO_ResetBits(__485_CS_GPIO_PORT,__485_CS__PIN);__485_delay(3000);
+//进入发送模式,必须要有延时等待485处理完数据
+#define _485_TX_EN()			_485_delay(1000); GPIO_SetBits(_485_RE_GPIO_PORT,_485_RE_PIN);  _485_delay(1000);
 
-/************************************************************/
 
-void __485_USART_Config(void);
-void __485_SendByte( USART_TypeDef * pUSARTx, uint8_t ch);
 
+/*debug*/
+
+#define _485_DEBUG_ON         1
+#define _485_DEBUG_ARRAY_ON   1
+#define _485_DEBUG_FUNC_ON    1
+   
+   
+// Log define
+#define _485_INFO(fmt,arg...)           printf("<<-_485-INFO->> "fmt"\n",##arg)
+#define _485_ERROR(fmt,arg...)          printf("<<-_485-ERROR->> "fmt"\n",##arg)
+#define _485_DEBUG(fmt,arg...)          do{\
+																					 if(_485_DEBUG_ON)\
+																					 printf("<<-_485-DEBUG->> [%d]"fmt"\n",__LINE__, ##arg);\
+																				 }while(0)
+
+#define _485_DEBUG_ARRAY(array, num)    do{\
+                                         int32_t i;\
+                                         uint8_t* a = array;\
+                                         if(_485_DEBUG_ARRAY_ON)\
+                                         {\
+                                            printf("<<-_485-DEBUG-ARRAY->>\n");\
+                                            for (i = 0; i < (num); i++)\
+                                            {\
+                                                printf("%d   ", (a)[i]);\
+                                                if ((i + 1 ) %10 == 0)\
+                                                {\
+                                                    printf("\n");\
+                                                }\
+                                            }\
+                                            printf("\n");\
+                                        }\
+                                       }while(0)
+
+#define _485_DEBUG_FUNC()               do{\
+                                         if(_485_DEBUG_FUNC_ON)\
+                                         printf("<<-_485-FUNC->> Func:%s@Line:%d\n",__func__,__LINE__);\
+                                       }while(0)
+
+
+void _485_Config(void);
+void _485_SendByte(  uint8_t ch );
+void _485_SendStr_length( uint8_t *str,uint32_t strlen );
+void _485_SendString(  uint8_t *str);
+
+																			 
+void bsp_485_IRQHandler(void);
+char *get_rebuff(uint16_t *len);
+void clean_rebuff(void);
 
 #endif /* __485_H */

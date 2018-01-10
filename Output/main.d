@@ -40,4 +40,6 @@
 ..\..\output\main.o: ..\..\User\./usart/bsp_debug_usart.h
 ..\..\output\main.o: F:\study\XiLiYiQi\Keil5\ARM\ARMCC\Bin\..\include\stdio.h
 ..\..\output\main.o: ..\..\User\./485/bsp_485.h
+..\..\output\main.o: ..\..\User\./485/485.h
+..\..\output\main.o: F:\study\XiLiYiQi\Keil5\ARM\ARMCC\Bin\..\include\stdbool.h
 ..\..\output\main.o: ..\..\User\./key/bsp_key.h

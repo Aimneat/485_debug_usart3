@@ -45,6 +45,7 @@
 "..\..\output\bsp_debug_usart.o"
 "..\..\output\bsp_485.o"
 "..\..\output\bsp_key.o"
+"..\..\output\485.o"
 --library_type=microlib --strict --scatter "..\..\Output\USART.sct"
 --summary_stderr --info summarysizes --map --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
