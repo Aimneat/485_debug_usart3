@@ -19,6 +19,7 @@
 #include "./usart/bsp_debug_usart.h"
 #include "./485/bsp_485.h"
 #include "./485/485.h"
+#include "./led/bsp_led.h"  
 #include "./key/bsp_key.h"
 
 
@@ -47,6 +48,8 @@ int main(void)
 	
 	Key_GPIO_Config();
 	
+	LED_GPIO_Config();
+	
   _485_Config();
   
 	/* 发送一个字符串 */
@@ -70,7 +73,11 @@ int main(void)
 //			printf("\r\n已使用485发送数据！\r\n");
 //			
 //		}else{
-			
+		  LED1_ON;
+      _delay (0xfffff);		
+		  LED1_OFF;
+      _delay (0xfffff);
+		
 			pbuf=get_rebuff(&len);
 			
 		  if(len>=MingLingChangDu){

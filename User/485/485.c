@@ -1,9 +1,9 @@
 /**
   ******************************************************************************
   * @file    485.c
-  * @author  fire
+  * @author  
   * @version V1.0
-  * @date    2015-xx-xx
+  * @date    
   * @brief   485应用
   ******************************************************************************
   * @attention
@@ -25,7 +25,12 @@ static void _delay(__IO u32 nCount)
 	for(; nCount != 0; nCount--);
 }
 
-
+/**
+  * @brief  处理接收来自串口发来的命令
+  * @param  array: 接收的命令
+  * @param  num: 接收的命令的字节长度
+  * @retval None
+  */
 void MingLingChuLi(uint8_t *array,uint16_t num)
 {
   uint8_t* a= array;
@@ -47,11 +52,23 @@ void MingLingChuLi(uint8_t *array,uint16_t num)
 
 }
 
+
+/**
+  * @brief  16进制发送浮点数
+  * @param  x: 要发送的浮点数
+  * @retval None
+  */
 void send_float(float x)
 {
   send_bytes((unsigned char *)&x,sizeof(x));
 }
 
+/**
+  * @brief  用485发送字节
+  * @param  start: 发送数据的起始指针
+  * @param  len:发送数据的长度
+  * @retval None
+  */
 void send_bytes(unsigned char *start,int len)
 {
    int i;
@@ -64,6 +81,11 @@ void send_bytes(unsigned char *start,int len)
 	 _485_RX_EN();
 }
 
+/**
+  * @brief  485发送将要打印的字符串及浮点数
+  * @param  str: 要发送的字符串
+  * @retval None
+  */
 void show_pressure(char *str)
 {
       _485_TX_EN();
@@ -73,6 +95,11 @@ void show_pressure(char *str)
 	    _485_RX_EN();
 }
 
+/**
+  * @brief  485发送将要打印的字符串
+  * @param  str: 要发送的字符串
+  * @retval None
+  */
 void show(char *str)
 {
       _485_TX_EN();
